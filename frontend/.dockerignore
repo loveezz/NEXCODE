@@ -4,3 +4,6 @@ public/monaco
 test-results
 playwright-report
 tests
+out
+.env*
+*.tsbuildinfo

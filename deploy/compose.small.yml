@@ -1,0 +1,16 @@
+# Optional limits for a small preview server; not a 30-user load guarantee.
+services:
+  backend:
+    mem_limit: 384m
+    environment:
+      WORKERS: "1"
+  frontend:
+    mem_limit: 512m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=256
+  runner:
+    mem_limit: 128m
+  executor-gateway:
+    mem_limit: 64m
+  gateway:
+    mem_limit: 64m
