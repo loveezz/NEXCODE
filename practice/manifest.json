@@ -1,0 +1,21 @@
+{
+  "version": "practice-8445ed4312934550",
+  "sources": {
+    "1-2": {
+      "file": "ЯП_ЛР1,2.docx",
+      "sha256": "f3ea8989258be5f2c70aa899b3489d2a895fa6100a1860b32fb8b240f7282abd"
+    },
+    "3-4": {
+      "file": "ЯП_ЛР3,4.docx",
+      "sha256": "af289b0d4261511844724d62feba6c07d0273460050a4829decfb53aa67640ea"
+    },
+    "5-6": {
+      "file": "ЯП_ЛР5_6.docx",
+      "sha256": "138a235cef06c1b30e3327e2004e52aa7b20d4d1bb0a09b7e1a58514ff29721b"
+    },
+    "7-8": {
+      "file": "ЯП_ЛР7,8.docx",
+      "sha256": "b665b6d3afe5e7112cda8e9a34aff4249bed2d1a61d5a9a3d59a606109d2f45e"
+    }
+  }
+}

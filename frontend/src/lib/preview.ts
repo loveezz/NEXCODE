@@ -2,7 +2,7 @@ import catalogData from "@/data/preview-catalog.json";
 import type { Catalog, User } from "./types";
 export const previewMessage =
   "Это предварительный просмотр интерфейса. Подключите сервер для сохранения данных и выполнения Python.";
-const catalog: Catalog = catalogData;
+const catalog: Catalog = catalogData as Catalog;
 const guest: User = {
   id: 0,
   login: "preview",
@@ -30,9 +30,13 @@ export function previewResponse(path: string, method: string): unknown {
   const match = pathname.match(/^\/exercises\/(\d+)$/);
   if (match) {
     const exercise = catalog.exercises.find((e) => e.id === Number(match[1]));
-    if (!exercise)
-      throw new Error("Упражнение не найдено в демонстрационном каталоге.");
-    return { exercise, example: JSON.parse(exercise.tests!.split("\n")[0]) };
+    if (!exercise) throw new Error("Упражнение не найдено в каталоге практик.");
+    return {
+      exercise,
+      example: exercise.tests?.trim()
+        ? JSON.parse(exercise.tests.split("\n")[0])
+        : { stdin: "", stdout: "" },
+    };
   }
   if (
     pathname === "/submissions" ||

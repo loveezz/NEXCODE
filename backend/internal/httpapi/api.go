@@ -69,6 +69,7 @@ func New(s *store.Store, a *auth.Service, q *engine.Queue, url string) http.Hand
 	m.HandleFunc("GET /api/submissions/{id}", api.guard("student", api.submission))
 	m.HandleFunc("GET /api/teacher/students", api.guard("teacher", api.students))
 	m.HandleFunc("GET /api/teacher/export", api.guard("teacher", api.export))
+	m.HandleFunc("PATCH /api/teacher/submissions/{id}/review", api.guard("teacher", api.reviewSubmission))
 	m.HandleFunc("GET /api/teacher/catalog", api.guard("teacher", api.fullCatalog))
 	m.HandleFunc("POST /api/teacher/labs", api.guard("teacher", api.saveLab))
 	m.HandleFunc("PUT /api/teacher/labs/{id}", api.guard("teacher", api.saveLab))
@@ -241,7 +242,11 @@ func (a *API) exercise(w http.ResponseWriter, r *http.Request) {
 	}
 	tests, _ := engine.ParseTests(e.Tests)
 	e.Tests = ""
-	write(w, 200, map[string]any{"exercise": e, "example": tests[0]})
+	example := engine.Test{}
+	if len(tests) > 0 {
+		example = tests[0]
+	}
+	write(w, 200, map[string]any{"exercise": e, "example": example})
 }
 func (a *API) getDraft(w http.ResponseWriter, r *http.Request) {
 	var code, updated string
@@ -299,6 +304,21 @@ func (a *API) submit(w http.ResponseWriter, r *http.Request) {
 	e, err := a.Store.Exercise(id(r))
 	if err != nil {
 		fail(w, 404, "Упражнение не найдено")
+		return
+	}
+	if e.Kind == "written" && v.Mode == "run" {
+		fail(w, 400, "Письменный ответ нужно сдать преподавателю")
+		return
+	}
+	if e.Kind != "python" && v.Mode == "check" {
+		report := `{"review":"pending","feedback":"Работа отправлена преподавателю. Автоматическая оценка не выставляется."}`
+		res, err := a.Store.DB.Exec(`INSERT INTO submissions(user_id,exercise_id,code,mode,status,report) VALUES(?,?,?,'check','review',?)`, uid, e.ID, v.Code, report)
+		if err != nil {
+			fail(w, 500, "Не удалось сохранить работу")
+			return
+		}
+		sid, _ := res.LastInsertId()
+		write(w, 202, map[string]any{"id": sid, "status": "review"})
 		return
 	}
 	var pending int
@@ -427,6 +447,15 @@ func validateExercise(e *store.Exercise) error {
 	if e.Difficulty == "" {
 		e.Difficulty = "Базовый"
 	}
+	if e.Kind == "" {
+		e.Kind = "python"
+	}
+	if e.Kind != "python" && e.Kind != "written" && e.Kind != "python_review" {
+		return errors.New("Неизвестный формат задания")
+	}
+	if e.Kind == "written" {
+		return nil
+	}
 	_, err := engine.ParseTests(e.Tests)
 	return err
 }
@@ -477,9 +506,9 @@ func (a *API) saveExercise(w http.ResponseWriter, r *http.Request) {
 	var res sql.Result
 	var err error
 	if eid > 0 {
-		res, err = a.Store.DB.Exec(`UPDATE exercises SET lab_id=?,title=?,statement=?,template=?,tests=?,timeout_ms=?,memory_mb=?,difficulty=?,position=? WHERE id=?`, e.LabID, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position, eid)
+		res, err = a.Store.DB.Exec(`UPDATE exercises SET lab_id=?,title=?,statement=?,template=?,tests=?,timeout_ms=?,memory_mb=?,difficulty=?,position=?,kind=? WHERE id=?`, e.LabID, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position, e.Kind, eid)
 	} else {
-		res, err = a.Store.DB.Exec(`INSERT INTO exercises(lab_id,title,statement,template,tests,timeout_ms,memory_mb,difficulty,position) VALUES(?,?,?,?,?,?,?,?,?)`, e.LabID, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position)
+		res, err = a.Store.DB.Exec(`INSERT INTO exercises(lab_id,title,statement,template,tests,timeout_ms,memory_mb,difficulty,position,kind) VALUES(?,?,?,?,?,?,?,?,?,?)`, e.LabID, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position, e.Kind)
 	}
 	if err != nil {
 		fail(w, 400, "Ошибка сохранения. Проверьте лабораторную")
@@ -569,7 +598,7 @@ func (a *API) importCatalog(w http.ResponseWriter, r *http.Request) {
 		lid, _ := res.LastInsertId()
 		for _, e := range l.Exercises {
 			validateExercise(&e)
-			_, er = tx.Exec(`INSERT INTO exercises(lab_id,title,statement,template,tests,timeout_ms,memory_mb,difficulty,position) VALUES(?,?,?,?,?,?,?,?,?)`, lid, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position)
+			_, er = tx.Exec(`INSERT INTO exercises(lab_id,title,statement,template,tests,timeout_ms,memory_mb,difficulty,position,kind) VALUES(?,?,?,?,?,?,?,?,?,?)`, lid, e.Title, e.Statement, e.Template, e.Tests, e.TimeoutMS, e.MemoryMB, e.Difficulty, e.Position, e.Kind)
 			if er != nil {
 				fail(w, 500, "Ошибка импорта упражнения")
 				return

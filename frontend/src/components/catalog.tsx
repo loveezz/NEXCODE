@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { exerciseHref } from "@/lib/runtime";
+import { basePath, exerciseHref } from "@/lib/runtime";
 import { ArrowRight, BookOpen, Search, Terminal } from "lucide-react";
 import type { Catalog } from "@/lib/types";
 import { solved } from "@/lib/api";
@@ -87,6 +87,8 @@ export default function CatalogView({
           <option value="all">Все статусы</option>
           <option value="not_started">Не начато</option>
           <option value="in_progress">В работе</option>
+          <option value="review">На проверке преподавателя</option>
+          <option value="revision">Нужна доработка</option>
           <option value="solved">Решено</option>
         </select>
         <span>{visible.length} упражнений</span>
@@ -106,10 +108,19 @@ export default function CatalogView({
                   <div>
                     <small>
                       ЛАБОРАТОРНАЯ {String(l.position).padStart(2, "0")}
-                      {l.source === "demo" ? " · ДЕМОНСТРАЦИОННАЯ" : ""}
+                      {l.source === "practice" ? " · ИЗ ПРАКТИК" : ""}
                     </small>
                     <h2>{l.title}</h2>
                     <p>{l.description}</p>
+                    {l.document_url && (
+                      <a
+                        className="text-link"
+                        href={basePath + l.document_url}
+                        download
+                      >
+                        Скачать исходную работу · DOCX
+                      </a>
+                    )}
                   </div>
                   <div className="lab-progress">
                     <strong>
@@ -136,8 +147,15 @@ export default function CatalogView({
                         <div>
                           <strong>{e.title}</strong>
                           <small>
-                            {e.difficulty} <span>·</span> {e.test_count} теста{" "}
-                            <span>·</span> {e.timeout_ms / 1000} с
+                            {e.difficulty} <span>·</span>{" "}
+                            {e.kind === "python"
+                              ? e.test_count + " тестов"
+                              : "Преподаватель"}{" "}
+                            {e.kind !== "written" && (
+                              <>
+                                <span>·</span> {e.timeout_ms / 1000} с
+                              </>
+                            )}
                           </small>
                         </div>
                         <Status status={e.status} />

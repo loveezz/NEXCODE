@@ -61,7 +61,7 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Yekaterinburg}
       SEMESTER_END: ${SEMESTER_END:-}
       TRUSTED_PROXY_CIDRS: ${WEB_SUBNET:-172.29.240.0/24}
-      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_PRACTICE: ${SEED_PRACTICE:-true}
       WORKERS: ${WORKERS:-2}
       QUEUE_CAPACITY: 64
     volumes: ["database:/data", "logs:/logs", "./config:/config:ro"]

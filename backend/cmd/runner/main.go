@@ -80,6 +80,10 @@ func main() {
 				http.Error(w, "invalid run", 400)
 				return
 			}
+			if err := engine.ValidateFiles(run.Files, run.DeniedFiles); err != nil {
+				http.Error(w, "invalid virtual files", 400)
+				return
+			}
 			budget += time.Duration(run.TimeoutMS) * time.Millisecond
 		}
 		payload, _ := json.Marshal(v)

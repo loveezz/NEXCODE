@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { exerciseHref } from "@/lib/runtime";
 import {
@@ -11,17 +11,30 @@ import {
   History as HistoryIcon,
   X,
 } from "lucide-react";
-import { api, date } from "@/lib/api";
+import { api, date, send } from "@/lib/api";
 import type { Submission } from "@/lib/types";
 import { Empty, ErrorState, Loading, Status } from "./common";
 import ReportView from "./report";
+import DiagramPreview from "./diagram-preview";
+import { useUser } from "./shell";
 import { Button } from "./ui/button";
 export default function HistoryView() {
+  const { data: currentUser } = useUser();
+  const canReview =
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
+  const client = useQueryClient();
+  const [feedback, setFeedback] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [reviewing, setReviewing] = useState(false);
   const params = useSearchParams();
   const [selected, setSelected] = useState<number | null>(
     params.get("id") ? Number(params.get("id")) : null,
   );
   const [filter, setFilter] = useState("all");
+  useEffect(() => {
+    setFeedback("");
+    setReviewError("");
+  }, [selected]);
   const all = params.get("all") === "1";
   const student = params.get("student");
   const exercise = params.get("exercise");
@@ -45,7 +58,11 @@ export default function HistoryView() {
     (s) =>
       (!student || s.user_id === Number(student)) &&
       (filter === "all" ||
-        (filter === "check" ? s.mode === "check" : s.mode === "run")),
+        (filter === "review"
+          ? s.status === "review"
+          : filter === "check"
+            ? s.mode === "check"
+            : s.mode === "run")),
   );
   return (
     <div>
@@ -64,6 +81,7 @@ export default function HistoryView() {
         {[
           ["all", "Все отправки"],
           ["check", "Проверки"],
+          ["review", "Ждут преподавателя"],
           ["run", "Запуски"],
         ].map(([v, label]) => (
           <button
@@ -171,8 +189,75 @@ export default function HistoryView() {
                       </Link>
                     </Button>
                   </div>
-                  <h4>Код решения</h4>
+                  <h4>Решение</h4>
                   <pre className="source-code">{detail.data.code}</pre>
+                  {detail.data.report.review && (
+                    <DiagramPreview text={detail.data.code} />
+                  )}
+                  {canReview && detail.data.report.review && (
+                    <div className="review-form">
+                      <label>
+                        Комментарий преподавателя
+                        <textarea
+                          aria-label="Комментарий преподавателя"
+                          value={feedback}
+                          onChange={(event) => setFeedback(event.target.value)}
+                          maxLength={4000}
+                          rows={3}
+                        />
+                      </label>
+                      {reviewError && (
+                        <p role="alert" className="form-error">
+                          {reviewError}
+                        </p>
+                      )}
+                      <div>
+                        {[
+                          ["passed", "Зачесть"],
+                          ["revision", "На доработку"],
+                        ].map(([status, label]) => (
+                          <Button
+                            key={status}
+                            disabled={reviewing}
+                            variant={
+                              status === "passed" ? "default" : "secondary"
+                            }
+                            onClick={async () => {
+                              setReviewing(true);
+                              setReviewError("");
+                              try {
+                                await send(
+                                  "/teacher/submissions/" +
+                                    selected +
+                                    "/review",
+                                  { status, feedback },
+                                  "PATCH",
+                                );
+                                await Promise.all(
+                                  [
+                                    "submission",
+                                    "history",
+                                    "catalog",
+                                    "students",
+                                  ].map((key) =>
+                                    client.invalidateQueries({
+                                      queryKey: [key],
+                                    }),
+                                  ),
+                                );
+                              } catch (error) {
+                                setReviewError((error as Error).message);
+                              } finally {
+                                setReviewing(false);
+                              }
+                            }}
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <ReportView
                     report={detail.data.report}
                     mode={detail.data.mode}

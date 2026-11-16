@@ -53,7 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer s.DB.Close()
-	if env("SEED_DEMO", "true") == "true" {
+	if env("SEED_PRACTICE", "true") == "true" {
 		if err = s.Seed(); err != nil {
 			log.Fatal(err)
 		}

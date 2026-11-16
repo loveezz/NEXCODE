@@ -16,6 +16,18 @@ export default function ReportView({
 }) {
   return (
     <div className="report-view">
+      {report.review && (
+        <div className={"manual-review manual-review-" + report.review}>
+          <strong>
+            {report.review === "pending"
+              ? "На проверке преподавателя"
+              : report.review === "accepted"
+                ? "Работа зачтена"
+                : "Нужна доработка"}
+          </strong>
+          {report.feedback && <p>{report.feedback}</p>}
+        </div>
+      )}
       {report.error && (
         <div className="form-error" role="alert">
           {report.error}
@@ -86,6 +98,25 @@ export default function ReportView({
                     stderr<pre>{r.stderr}</pre>
                   </label>
                 )}
+                {Object.entries(r.files || {}).map(([name, content]) => (
+                  <label key={name}>
+                    Файл {name}
+                    <pre>{content || "(пустой файл)"}</pre>
+                    {r.expected_files?.[name] !== undefined && (
+                      <>
+                        Ожидаемое содержимое
+                        <pre>{r.expected_files[name] || "(пустой файл)"}</pre>
+                      </>
+                    )}
+                  </label>
+                ))}
+                {Object.keys(r.expected_files || {})
+                  .filter((name) => !(name in (r.files || {})))
+                  .map((name) => (
+                    <label className="stderr" key={name}>
+                      Файл {name} не создан<pre>{r.expected_files![name]}</pre>
+                    </label>
+                  ))}
               </div>
             </details>
           ))}

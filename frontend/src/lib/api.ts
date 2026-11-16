@@ -52,6 +52,8 @@ export const statusLabels: Record<string, string> = {
   failed: "Есть ошибки",
   error: "Ошибка исполнения",
   executed: "Выполнено",
+  review: "На проверке преподавателя",
+  revision: "Нужна доработка",
 };
 export const date = (v: string) =>
   new Date(v).toLocaleString("ru-RU", {

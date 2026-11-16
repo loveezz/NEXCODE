@@ -17,14 +17,19 @@ import (
 )
 
 type Test struct {
-	Stdin     string `json:"stdin"`
-	Stdout    string `json:"stdout"`
-	TimeoutMS int    `json:"timeout_ms,omitempty"`
-	Compare   string `json:"compare,omitempty"`
+	Stdin         string            `json:"stdin"`
+	Stdout        string            `json:"stdout"`
+	TimeoutMS     int               `json:"timeout_ms,omitempty"`
+	Compare       string            `json:"compare,omitempty"`
+	Files         map[string]string `json:"files,omitempty"`
+	ExpectedFiles map[string]string `json:"expected_files,omitempty"`
+	DeniedFiles   []string          `json:"denied_files,omitempty"`
 }
 type Run struct {
-	Stdin     string `json:"stdin"`
-	TimeoutMS int    `json:"timeout_ms"`
+	Stdin       string            `json:"stdin"`
+	TimeoutMS   int               `json:"timeout_ms"`
+	Files       map[string]string `json:"files,omitempty"`
+	DeniedFiles []string          `json:"denied_files,omitempty"`
 }
 type Request struct {
 	Code     string `json:"code"`
@@ -40,12 +45,13 @@ type Diagnostic struct {
 	} `json:"location"`
 }
 type Result struct {
-	Stdout      string  `json:"stdout"`
-	Stderr      string  `json:"stderr"`
-	ExitCode    int     `json:"exit_code"`
-	DurationMS  float64 `json:"duration_ms"`
-	TimedOut    bool    `json:"timed_out"`
-	OutputLimit bool    `json:"output_limit"`
+	Stdout      string            `json:"stdout"`
+	Stderr      string            `json:"stderr"`
+	ExitCode    int               `json:"exit_code"`
+	DurationMS  float64           `json:"duration_ms"`
+	TimedOut    bool              `json:"timed_out"`
+	OutputLimit bool              `json:"output_limit"`
+	Files       map[string]string `json:"files,omitempty"`
 }
 type Response struct {
 	Results []Result     `json:"results"`
@@ -53,18 +59,57 @@ type Response struct {
 }
 type TestResult struct {
 	Result
-	Stdin    string `json:"stdin"`
-	Expected string `json:"expected"`
-	Actual   string `json:"actual"`
-	Passed   bool   `json:"passed"`
+	Stdin         string            `json:"stdin"`
+	Expected      string            `json:"expected"`
+	Actual        string            `json:"actual"`
+	Passed        bool              `json:"passed"`
+	InputFiles    map[string]string `json:"input_files,omitempty"`
+	ExpectedFiles map[string]string `json:"expected_files,omitempty"`
 }
 type Report struct {
-	Results []TestResult `json:"results"`
-	Lint    []Diagnostic `json:"lint"`
-	Passed  int          `json:"passed"`
-	Total   int          `json:"total"`
-	Error   string       `json:"error,omitempty"`
+	Results  []TestResult `json:"results"`
+	Lint     []Diagnostic `json:"lint"`
+	Passed   int          `json:"passed"`
+	Total    int          `json:"total"`
+	Error    string       `json:"error,omitempty"`
+	Review   string       `json:"review,omitempty"`
+	Feedback string       `json:"feedback,omitempty"`
 }
+
+// Only simple relative virtual filenames are accepted. No host paths or directories.
+func ValidateFiles(files map[string]string, denied []string) error {
+	if len(files) > 16 || len(denied) > 16 {
+		return errors.New("Не более 16 учебных файлов")
+	}
+	total := 0
+	valid := func(name string) bool {
+		if len(name) == 0 || len(name) > 100 || name == "." || name == ".." {
+			return false
+		}
+		for _, c := range name {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '_' || c == '-') {
+				return false
+			}
+		}
+		return true
+	}
+	for name, content := range files {
+		if !valid(name) || len(content) > 32768 {
+			return errors.New("Недопустимое имя или размер учебного файла")
+		}
+		total += len(content)
+	}
+	for _, name := range denied {
+		if !valid(name) {
+			return errors.New("Недопустимое имя учебного файла")
+		}
+	}
+	if total > 65536 {
+		return errors.New("Учебные файлы превышают 64 КБ")
+	}
+	return nil
+}
+
 type Executor interface {
 	Execute(context.Context, Request) (Response, error)
 }
@@ -125,6 +170,12 @@ func ParseTests(text string) ([]Test, error) {
 		}
 		if len(t.Stdin) > 32768 || len(t.Stdout) > 32768 {
 			return nil, errors.New("Вход и вывод теста ограничены 32 КБ")
+		}
+		if err := ValidateFiles(t.Files, t.DeniedFiles); err != nil {
+			return nil, err
+		}
+		if err := ValidateFiles(t.ExpectedFiles, nil); err != nil {
+			return nil, err
 		}
 		tests = append(tests, t)
 		if len(tests) > 20 {
@@ -215,6 +266,9 @@ func (q *Queue) process(j Job) {
 			report.Error = err.Error()
 			return
 		}
+	} else if samples, err := ParseTests(j.Exercise.Tests); err == nil && len(samples) > 0 {
+		tests[0].Files = samples[0].Files
+		tests[0].DeniedFiles = samples[0].DeniedFiles
 	}
 	runs := []Run{}
 	budget := 30 * time.Second
@@ -223,7 +277,7 @@ func (q *Queue) process(j Job) {
 		if ms == 0 {
 			ms = j.Exercise.TimeoutMS
 		}
-		runs = append(runs, Run{t.Stdin, ms})
+		runs = append(runs, Run{Stdin: t.Stdin, TimeoutMS: ms, Files: t.Files, DeniedFiles: t.DeniedFiles})
 		budget += time.Duration(ms) * time.Millisecond
 	}
 	ctx, cancel := context.WithTimeout(q.ctx, budget)
@@ -245,8 +299,12 @@ func (q *Queue) process(j Job) {
 		passed := r.ExitCode == 0 && !r.TimedOut && !r.OutputLimit
 		if j.Mode == "check" {
 			passed = passed && Equal(r.Stdout, tests[i].Stdout, tests[i].Compare)
+			for name, expected := range tests[i].ExpectedFiles {
+				actual, exists := r.Files[name]
+				passed = passed && exists && Equal(actual, expected, tests[i].Compare)
+			}
 		}
-		report.Results = append(report.Results, TestResult{Result: r, Stdin: tests[i].Stdin, Expected: tests[i].Stdout, Actual: r.Stdout, Passed: passed})
+		report.Results = append(report.Results, TestResult{Result: r, Stdin: tests[i].Stdin, Expected: tests[i].Stdout, Actual: r.Stdout, Passed: passed, InputFiles: tests[i].Files, ExpectedFiles: tests[i].ExpectedFiles})
 		if passed {
 			report.Passed++
 		}

@@ -28,6 +28,7 @@ import { useTheme } from "./providers";
 import { Empty, ErrorState, Loading, Status } from "./common";
 import { Button } from "./ui/button";
 import ReportView from "./report";
+import DiagramPreview from "./diagram-preview";
 import { basePath, isPreview } from "@/lib/runtime";
 const Monaco = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -41,9 +42,14 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
   const exercise = useQuery({
     queryKey: ["exercise", exerciseId],
     queryFn: () =>
-      api<{ exercise: Exercise; example: { stdin: string; stdout: string } }>(
-        `/exercises/${exerciseId}`,
-      ),
+      api<{
+        exercise: Exercise;
+        example: {
+          stdin: string;
+          stdout: string;
+          files?: Record<string, string>;
+        };
+      }>(`/exercises/${exerciseId}`),
   });
   const draft = useQuery({
     queryKey: ["draft", exerciseId],
@@ -186,6 +192,7 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
   }, [job.data]);
   async function execute(mode: string) {
     if (isPreview || busy || !ready) return;
+    if (exercise.data?.exercise.kind === "written") mode = "check";
     setSending(true);
     setSubmitError("");
     setTab("result");
@@ -228,6 +235,9 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
     );
   if (!exercise.data || !ready) return <Loading />;
   const e = exercise.data.exercise;
+  const written = e.kind === "written";
+  const manual = e.kind !== "python";
+  const inputFiles = exercise.data.example.files || {};
   return (
     <div className="exercise-workspace">
       <div className="editor-heading">
@@ -252,56 +262,81 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
           </div>
           <div className="statement-body">
             <span className="eyebrow">
-              PYTHON · {e.difficulty.toUpperCase()}
+              {written
+                ? "ПИСЬМЕННАЯ РАБОТА"
+                : "PYTHON · " + e.difficulty.toUpperCase()}
             </span>
             <h1>{e.title}</h1>
             <p className="statement-text">{e.statement}</p>
-            <div className="limits">
-              <span>
-                <Clock3 size={14} />
-                {e.timeout_ms / 1000} с
-              </span>
-              <span>
-                <MemoryStick size={14} />
-                {e.memory_mb} МБ
-              </span>
-              <span>
-                <CheckCheck size={14} />
-                {e.test_count} теста
-              </span>
-            </div>
-            <h3>Пример</h3>
-            <div className="example">
-              <label>
-                Ввод<pre>{exercise.data.example.stdin}</pre>
-              </label>
-              <label>
-                Вывод<pre>{exercise.data.example.stdout}</pre>
-              </label>
-            </div>
-            <div className="statement-note">
-              <Code2 size={18} />
-              <p>
-                Читайте данные через <code>input()</code>, выводите результат
-                через <code>print()</code>. Не добавляйте приглашения ко вводу.
+            {manual && (
+              <p className="manual-note">
+                Работу проверяет преподаватель. После сдачи результат появится в
+                истории.
               </p>
-            </div>
-            <details className="sandbox-note">
-              <summary>Об окружении</summary>
-              <p>
-                Python 3.12. Доступны math, random, re, statistics, collections,
-                itertools, functools, string, decimal, fractions, datetime,
-                json, heapq, bisect, operator, array. Сеть, файлы и запуск
-                процессов запрещены.
-              </p>
-            </details>
+            )}
+            {!written && (
+              <div className="limits">
+                <span>
+                  <Clock3 size={14} />
+                  {e.timeout_ms / 1000} с
+                </span>
+                <span>
+                  <MemoryStick size={14} />
+                  {e.memory_mb} МБ
+                </span>
+                <span>
+                  <CheckCheck size={14} />
+                  {manual
+                    ? "Проверка преподавателем"
+                    : e.test_count + " тестов"}
+                </span>
+              </div>
+            )}
+            {!written && (
+              <>
+                <h3>Пример</h3>
+                <div className="example">
+                  <label>
+                    Ввод<pre>{exercise.data.example.stdin}</pre>
+                  </label>
+                  <label>
+                    Вывод<pre>{exercise.data.example.stdout}</pre>
+                  </label>
+                </div>
+                {Object.entries(inputFiles).map(([name, content]) => (
+                  <details className="virtual-file" key={name} open>
+                    <summary>{name}</summary>
+                    <pre>{content || "(пустой файл)"}</pre>
+                  </details>
+                ))}
+                <div className="statement-note">
+                  <Code2 size={18} />
+                  <p>
+                    {manual
+                      ? "Выбирайте данные и оформление по условию; используйте запуск для самопроверки."
+                      : "Соблюдайте указанный формат ввода и вывода. Для файловых задач используйте учебные файлы."}
+                  </p>
+                </div>
+                <details className="sandbox-note">
+                  <summary>Об окружении</summary>
+                  <p>
+                    Python 3.12. Доступны math, random, re, statistics,
+                    collections, itertools, functools, string, decimal,
+                    fractions, datetime, json, heapq, bisect, operator, array.
+                    Доступны учебные файлы через open(), os.path.exists() и
+                    pathlib.Path. Файлы сервера, сеть и запуск процессов
+                    недоступны.
+                  </p>
+                </details>
+              </>
+            )}
           </div>
         </section>
         <section className="code-panel">
           <div className="code-panel-toolbar">
             <span>
               <span className="python-dot" />
-              main.py
+              {written ? "Ответ.md" : "main.py"}
             </span>
             <div>
               <small className={saving === "error" ? "save-error" : ""}>
@@ -326,7 +361,7 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
           <div className="monaco-wrap">
             <Monaco
               height="100%"
-              language="python"
+              language={written ? "markdown" : "python"}
               path={`exercise-${exerciseId}.py`}
               value={code}
               onChange={(v) => setCode(v || "")}
@@ -357,18 +392,21 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
           )}
           <div className="run-toolbar">
             <span>
-              Python 3.12<small>Ctrl + Enter — запуск</small>
+              {written ? "Письменный ответ" : "Python 3.12"}
+              <small>Ctrl + Enter — {written ? "сдать" : "запуск"}</small>
             </span>
             <div>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={busy || isPreview}
-                onClick={() => execute("run")}
-              >
-                <Play size={14} />
-                Запустить
-              </Button>
+              {!written && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy || isPreview}
+                  onClick={() => execute("run")}
+                >
+                  <Play size={14} />
+                  Запустить
+                </Button>
+              )}
               <Button
                 size="sm"
                 disabled={busy || isPreview}
@@ -379,7 +417,7 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
                 ) : (
                   <CheckCheck size={15} />
                 )}
-                Проверить
+                {manual ? "Сдать преподавателю" : "Проверить"}
               </Button>
             </div>
           </div>
@@ -391,20 +429,22 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
               >
                 <Terminal size={14} />
                 Результаты
-                {job.data && (
+                {job.data && !manual && (
                   <span>
                     {job.data.report.passed ?? 0}/
                     {job.data.report.total ?? e.test_count}
                   </span>
                 )}
               </button>
-              <button
-                className={tab === "input" ? "selected" : ""}
-                onClick={() => setTab("input")}
-              >
-                Входные данные
-              </button>
-              <span>JSON Lines Engine</span>
+              {!written && (
+                <button
+                  className={tab === "input" ? "selected" : ""}
+                  onClick={() => setTab("input")}
+                >
+                  Входные данные
+                </button>
+              )}
+              <span>{manual ? "Проверка преподавателем" : "Автотесты"}</span>
             </div>
             <div className="console-body" aria-live="polite">
               {tab === "input" ? (
@@ -452,12 +492,15 @@ export default function ExerciseEditor({ exerciseId }: { exerciseId: number }) {
                       <span>
                         {isPreview
                           ? "Запуск Python и сохранение решений появятся после подключения сервера."
-                          : "Запустите программу или отправьте решение на проверку."}
+                          : written
+                            ? "Запишите ответ и сдайте его преподавателю."
+                            : "Запустите программу или отправьте решение на проверку."}
                       </span>
                     </Empty>
                   )}
                 </>
               )}
+              {written && <DiagramPreview text={code} />}
             </div>
           </div>
         </section>

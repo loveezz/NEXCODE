@@ -1,5 +1,64 @@
 @import "tailwindcss";
 
+.manual-note,
+.manual-review,
+.review-form,
+.diagram-preview,
+.virtual-file {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 16px 0;
+  background: var(--surface-alt);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.manual-review strong {
+  color: var(--blue);
+}
+.manual-review-accepted strong {
+  color: var(--green);
+}
+.manual-review-revision strong,
+.status-revision {
+  color: var(--accent);
+}
+.status-review {
+  color: var(--blue);
+  background: var(--surface-alt);
+}
+.virtual-file pre,
+.diagram-preview {
+  overflow: auto;
+  max-width: 100%;
+}
+.virtual-file pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+}
+.diagram-preview svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+}
+.review-form textarea {
+  display: block;
+  width: 100%;
+  margin: 8px 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+}
+.review-form > div {
+  display: flex;
+  gap: 12px;
+}
+
 .preview-banner {
   display: flex;
   flex-wrap: wrap;
@@ -1423,6 +1482,7 @@ h1 {
 }
 .catalog-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 24px;
@@ -1450,6 +1510,15 @@ h1 {
 .catalog-toolbar select {
   font-size: 0.9375rem;
   min-height: 41px;
+  min-width: 0;
+  max-width: 100%;
+}
+.catalog-toolbar select[aria-label="Лабораторная работа"] {
+  width: 320px;
+  flex: 0 1 320px;
+}
+.catalog-toolbar .search-field {
+  min-width: 220px;
 }
 .catalog-toolbar > span {
   font-size: 0.875rem;

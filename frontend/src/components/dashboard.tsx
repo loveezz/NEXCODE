@@ -248,7 +248,7 @@ export default function Dashboard({ initial }: { initial?: Catalog }) {
                           ? "Продолжить обучение"
                           : "Готова к изучению"}
                     </span>
-                    {lab.source === "demo" && <small>Демо</small>}
+                    {lab.source === "practice" && <small>Практика</small>}
                   </div>
                 </Link>
               );

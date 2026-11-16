@@ -45,6 +45,7 @@ users хранит full_name, group_name, invite_code_id, role, session_uuid, la
 | GET /api/submissions/:id | Владелец/преподаватель: код и отчёт |
 | GET /api/teacher/students | ФИО, группы и прогресс |
 | GET /api/teacher/export | CSV прогресса |
+| PATCH /api/teacher/submissions/:id/review | `{status: passed/revision, feedback}` — проверка письменной или свободной работы |
 | GET /api/teacher/catalog | Каталог с полными тестами |
 | POST/PUT/DELETE /api/teacher/labs и /:id | Лабораторные |
 | POST/PUT/DELETE /api/teacher/exercises и /:id | Упражнения; отправки защищают от удаления |
@@ -56,3 +57,9 @@ users хранит full_name, group_name, invite_code_id, role, session_uuid, la
 HTTP JSON в UTF-8; ошибки `{error: string}`. Все SQL-запросы параметризованы. Для браузерных изменений Origin должен совпадать с APP_URL. JWT заменён на серверные UUIDv4-сессии. Код студента никогда не получает cookie или runner-токен.
 
 История и черновики долговечны в SQLite. Буфер очереди — в памяти; после рестарта незавершённые задания помечаются ошибкой. Stateless runner масштабируется репликами, SQLite остаётся в одном API. Перед копированием тома остановите backend либо используйте Online Backup API с учётом WAL.
+
+Каталог practice встроен в Go-образ. labs/exercises имеют catalog_key и archived;
+исторические записи сохраняются. exercise.kind различает python, python_review
+и written. Ручная сдача создаёт статус review; преподаватель переводит его в
+passed или revision с комментарием. Python-файлы реализованы в памяти дочернего
+интерпретатора; реальное открытие файлов по-прежнему блокируется audit hook.

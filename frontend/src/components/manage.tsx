@@ -87,6 +87,7 @@ export default function ManageView() {
         timeout_ms: Number(f.get("timeout_ms")),
         memory_mb: Number(f.get("memory_mb")),
         difficulty: f.get("difficulty"),
+        kind: f.get("kind") || "python",
         position: Number(f.get("position")),
       };
     try {
@@ -207,7 +208,8 @@ export default function ManageView() {
           <strong>Ваши лабораторные — ваши правила</strong>
           <p>
             Импортируйте JSON с условиями и тестами JSON Lines или создайте
-            работу вручную. Демо-каталог можно использовать как образец.
+            работу вручную. Текущие задания загружены из четырёх документов
+            practice.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={exportCatalog}>
@@ -240,7 +242,7 @@ export default function ManageView() {
               <div>
                 <small>
                   ЛАБОРАТОРНАЯ {String(l.position).padStart(2, "0")}
-                  {l.source === "demo" ? " · ДЕМО" : ""}
+                  {l.source === "practice" ? " · ИЗ ПРАКТИК" : ""}
                 </small>
                 <h2>{l.title}</h2>
                 <p>{l.description}</p>
@@ -383,6 +385,24 @@ export default function ManageView() {
                     </select>
                   </label>
                   <label>
+                    Формат работы
+                    <select
+                      name="kind"
+                      defaultValue={
+                        ("kind" in editing.value && editing.value.kind) ||
+                        "python"
+                      }
+                    >
+                      <option value="python">Python · автотесты</option>
+                      <option value="python_review">
+                        Python · проверка преподавателем
+                      </option>
+                      <option value="written">
+                        Письменный ответ / блок-схема
+                      </option>
+                    </select>
+                  </label>
+                  <label>
                     Условие
                     <textarea
                       name="statement"
@@ -409,14 +429,13 @@ export default function ManageView() {
                       className="mono"
                       name="tests"
                       defaultValue={editing.value.tests}
-                      required
                       maxLength={1048576}
                       rows={5}
                       spellCheck={false}
                     />
                     <small>
                       Один JSON на строку. Обязательные поля: stdin и stdout. До
-                      20 тестов.
+                      20 тестов. Для письменного ответа оставьте пустым.
                     </small>
                   </label>
                   <div className="form-grid">

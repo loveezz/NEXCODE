@@ -45,19 +45,21 @@ test("student: no passwords, editor, persistent identity and progress across log
     page.getByRole("heading", { name: /Привет, АЛЕКСАНДР/ }),
   ).toBeVisible();
   const me = await (await page.request.get("/api/auth/me")).json();
-  await page
-    .getByRole("link", { name: "Начать практику", exact: true })
-    .click();
+  const catalog = await (await page.request.get("/api/catalog")).json();
+  const exercise = catalog.exercises.find(
+    (e: { catalog_key: string }) => e.catalog_key === "practice-3-4:3.4.1",
+  );
+  const draftURL = "/api/exercises/" + exercise.id + "/draft";
+  await page.goto("/exercise?id=" + exercise.id);
   await expect(page.locator(".monaco-editor")).toBeVisible();
   await page.locator(".monaco-editor").click({ position: { x: 180, y: 80 } });
   await page.keyboard.press("Control+a");
-  await page.keyboard.insertText('name = input()\nprint(f"Привет, {name}!")\n');
+  await page.keyboard.insertText(
+    'delay = float(input())\nprint("Высокая задержка" if delay > 100 else "Задержка в норме")\n',
+  );
   await expect
-    .poll(
-      async () =>
-        (await (await page.request.get("/api/exercises/1/draft")).json()).code,
-    )
-    .toContain("print(f");
+    .poll(async () => (await (await page.request.get(draftURL)).json()).code)
+    .toContain("Высокая задержка");
   await page.reload();
   await expect(
     page.getByText("Черновик сохранён", { exact: true }),
@@ -65,7 +67,7 @@ test("student: no passwords, editor, persistent identity and progress across log
   await page.getByRole("button", { name: "Проверить", exact: true }).click();
   if (process.env.E2E_RUNNER_AVAILABLE === "true")
     await expect(
-      page.getByText("Пройдено 3 из 3 тестов", { exact: true }),
+      page.getByText("Пройдено 4 из 4 тестов", { exact: true }),
     ).toBeVisible();
   else
     await expect(page.locator('.console-body [role="alert"]')).toContainText(
@@ -89,9 +91,9 @@ test("student: no passwords, editor, persistent identity and progress across log
   ).toBeVisible();
   const again = await (await page.request.get("/api/auth/me")).json();
   expect(again.id).toBe(me.id);
-  expect(
-    (await (await page.request.get("/api/exercises/1/draft")).json()).code,
-  ).toContain("print(f");
+  expect((await (await page.request.get(draftURL)).json()).code).toContain(
+    "Высокая задержка",
+  );
   await page.screenshot({
     path: "../artifacts/identity-dashboard.png",
     fullPage: true,
@@ -278,33 +280,31 @@ test("staff catalog and administration still work", async ({ page }) => {
     .getByRole("link", { name: "Каталог заданий", exact: true })
     .click();
   const title = `Импорт ${Date.now()}`;
-  await page
-    .getByLabel("Импорт каталога")
-    .setInputFiles({
-      name: "catalog.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(
-        JSON.stringify({
-          labs: [
-            {
-              title,
-              description: "Тест",
-              position: 8,
-              exercises: [
-                {
-                  title: "Тест суммы",
-                  statement: "Выведите сумму.",
-                  template: "# code",
-                  tests: '{"stdin":"2\\n3\\n","stdout":"5\\n"}',
-                  timeout_ms: 5000,
-                  memory_mb: 128,
-                },
-              ],
-            },
-          ],
-        }),
-      ),
-    });
+  await page.getByLabel("Импорт каталога").setInputFiles({
+    name: "catalog.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        labs: [
+          {
+            title,
+            description: "Тест",
+            position: 8,
+            exercises: [
+              {
+                title: "Тест суммы",
+                statement: "Выведите сумму.",
+                template: "# code",
+                tests: '{"stdin":"2\\n3\\n","stdout":"5\\n"}',
+                timeout_ms: 5000,
+                memory_mb: 128,
+              },
+            ],
+          },
+        ],
+      }),
+    ),
+  });
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();

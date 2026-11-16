@@ -38,6 +38,7 @@ export type Lab = {
   description: string;
   position: number;
   source: string;
+  document_url?: string;
 };
 export type Exercise = {
   id: number;
@@ -52,6 +53,8 @@ export type Exercise = {
   position: number;
   status: string;
   test_count: number;
+  kind: "python" | "python_review" | "written";
+  catalog_key?: string;
 };
 export type Catalog = { labs: Lab[]; exercises: Exercise[] };
 export type Diagnostic = {
@@ -80,8 +83,13 @@ export type Result = {
   timed_out: boolean;
   output_limit: boolean;
   passed: boolean;
+  files?: Record<string, string>;
+  input_files?: Record<string, string>;
+  expected_files?: Record<string, string>;
 };
 export type Report = {
+  review?: "pending" | "accepted" | "revision";
+  feedback?: string;
   results?: Result[];
   lint?: Diagnostic[];
   passed?: number;
