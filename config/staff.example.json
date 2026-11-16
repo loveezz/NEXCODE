@@ -1,0 +1,8 @@
+[
+  {
+    "login": "teacher",
+    "full_name": "Петрова Анна Сергеевна",
+    "role": "teacher",
+    "password_hash": "REPLACE_WITH_BCRYPT_HASH"
+  }
+]

@@ -1,0 +1,202 @@
+{
+  "labs": [
+    {
+      "id": 1,
+      "title": "Основы Python",
+      "description": "Ввод и вывод, переменные и арифметика",
+      "position": 1,
+      "source": "demo"
+    },
+    {
+      "id": 2,
+      "title": "Условия и циклы",
+      "description": "Логика программы и повторение действий",
+      "position": 2,
+      "source": "demo"
+    },
+    {
+      "id": 3,
+      "title": "Строки и коллекции",
+      "description": "Работа с текстом, списками и множествами",
+      "position": 3,
+      "source": "demo"
+    },
+    {
+      "id": 4,
+      "title": "Функции и алгоритмы",
+      "description": "Декомпозиция и простые алгоритмы",
+      "position": 4,
+      "source": "demo"
+    }
+  ],
+  "exercises": [
+    {
+      "id": 1,
+      "lab_id": 1,
+      "title": "Привет, Python!",
+      "statement": "Прочитайте имя из стандартного ввода и выведите приветствие в формате «Привет, Анна!».\n\nВходные данные\nОдна строка — имя пользователя.\n\nВыходные данные\nПриветствие с именем и восклицательным знаком.",
+      "template": "name = input()\n# Выведите приветствие\n",
+      "tests": "{\"stdin\":\"Анна\\n\",\"stdout\":\"Привет, Анна!\\n\"}\n{\"stdin\":\"Python\\n\",\"stdout\":\"Привет, Python!\\n\"}\n{\"stdin\":\"Мир\\n\",\"stdout\":\"Привет, Мир!\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 1,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 2,
+      "lab_id": 1,
+      "title": "Сумма двух чисел",
+      "statement": "Прочитайте два целых числа (каждое на отдельной строке) и выведите их сумму.",
+      "template": "a = int(input())\nb = int(input())\n# Выведите сумму\n",
+      "tests": "{\"stdin\":\"2\\n3\\n\",\"stdout\":\"5\\n\"}\n{\"stdin\":\"-5\\n5\\n\",\"stdout\":\"0\\n\"}\n{\"stdin\":\"100\\n250\\n\",\"stdout\":\"350\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 2,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 3,
+      "lab_id": 1,
+      "title": "Минуты в часы",
+      "statement": "На вход подаётся неотрицательное число минут. Выведите полные часы и оставшиеся минуты через пробел.",
+      "template": "minutes = int(input())\n",
+      "tests": "{\"stdin\":\"135\\n\",\"stdout\":\"2 15\\n\"}\n{\"stdin\":\"60\\n\",\"stdout\":\"1 0\\n\"}\n{\"stdin\":\"0\\n\",\"stdout\":\"0 0\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 3,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 4,
+      "lab_id": 2,
+      "title": "Чётное или нечётное",
+      "statement": "Прочитайте целое число. Выведите EVEN для чётного числа и ODD для нечётного.",
+      "template": "number = int(input())\n",
+      "tests": "{\"stdin\":\"4\\n\",\"stdout\":\"EVEN\\n\"}\n{\"stdin\":\"-3\\n\",\"stdout\":\"ODD\\n\"}\n{\"stdin\":\"0\\n\",\"stdout\":\"EVEN\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 1,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 5,
+      "lab_id": 2,
+      "title": "Сумма последовательности",
+      "statement": "Прочитайте целое n (1 ≤ n ≤ 10000) и выведите сумму целых чисел от 1 до n включительно.",
+      "template": "n = int(input())\n",
+      "tests": "{\"stdin\":\"5\\n\",\"stdout\":\"15\\n\"}\n{\"stdin\":\"1\\n\",\"stdout\":\"1\\n\"}\n{\"stdin\":\"100\\n\",\"stdout\":\"5050\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 2,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 6,
+      "lab_id": 2,
+      "title": "Факториал",
+      "statement": "Прочитайте n (0 ≤ n ≤ 20) и выведите n!. Факториал нуля равен 1.",
+      "template": "n = int(input())\n",
+      "tests": "{\"stdin\":\"0\\n\",\"stdout\":\"1\\n\"}\n{\"stdin\":\"5\\n\",\"stdout\":\"120\\n\"}\n{\"stdin\":\"10\\n\",\"stdout\":\"3628800\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 3,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 7,
+      "lab_id": 3,
+      "title": "Палиндром",
+      "statement": "Прочитайте строку из строчных латинских букв. Выведите YES, если она одинаково читается в обоих направлениях, иначе NO.",
+      "template": "text = input()\n",
+      "tests": "{\"stdin\":\"level\\n\",\"stdout\":\"YES\\n\"}\n{\"stdin\":\"python\\n\",\"stdout\":\"NO\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 1,
+      "status": "not_started",
+      "test_count": 2
+    },
+    {
+      "id": 8,
+      "lab_id": 3,
+      "title": "Уникальные числа",
+      "statement": "Прочитайте целые числа в одной строке через пробел. Выведите количество различных чисел.",
+      "template": "numbers = list(map(int, input().split()))\n",
+      "tests": "{\"stdin\":\"1 2 2 3 1\\n\",\"stdout\":\"3\\n\"}\n{\"stdin\":\"5 5 5\\n\",\"stdout\":\"1\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 2,
+      "status": "not_started",
+      "test_count": 2
+    },
+    {
+      "id": 9,
+      "lab_id": 3,
+      "title": "Самое длинное слово",
+      "statement": "Прочитайте строку слов через пробел. Выведите первое слово максимальной длины.",
+      "template": "words = input().split()\n",
+      "tests": "{\"stdin\":\"я изучаю Python\\n\",\"stdout\":\"изучаю\\n\"}\n{\"stdin\":\"one three two\\n\",\"stdout\":\"three\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 3,
+      "status": "not_started",
+      "test_count": 2
+    },
+    {
+      "id": 10,
+      "lab_id": 4,
+      "title": "Наибольший общий делитель",
+      "statement": "Прочитайте два положительных целых числа на отдельных строках. Выведите их НОД.",
+      "template": "a = int(input())\nb = int(input())\n",
+      "tests": "{\"stdin\":\"18\\n24\\n\",\"stdout\":\"6\\n\"}\n{\"stdin\":\"7\\n13\\n\",\"stdout\":\"1\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 1,
+      "status": "not_started",
+      "test_count": 2
+    },
+    {
+      "id": 11,
+      "lab_id": 4,
+      "title": "Простое число",
+      "statement": "Прочитайте n (1 ≤ n ≤ 1000000). Выведите YES, если число простое, иначе NO.",
+      "template": "n = int(input())\n",
+      "tests": "{\"stdin\":\"1\\n\",\"stdout\":\"NO\\n\"}\n{\"stdin\":\"17\\n\",\"stdout\":\"YES\\n\"}\n{\"stdin\":\"100\\n\",\"stdout\":\"NO\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 2,
+      "status": "not_started",
+      "test_count": 3
+    },
+    {
+      "id": 12,
+      "lab_id": 4,
+      "title": "Числа Фибоначчи",
+      "statement": "Прочитайте n (0 ≤ n ≤ 40). Выведите n-е число Фибоначчи: F(0)=0, F(1)=1.",
+      "template": "n = int(input())\n",
+      "tests": "{\"stdin\":\"0\\n\",\"stdout\":\"0\\n\"}\n{\"stdin\":\"10\\n\",\"stdout\":\"55\\n\"}\n{\"stdin\":\"1\\n\",\"stdout\":\"1\\n\"}",
+      "timeout_ms": 5000,
+      "memory_mb": 128,
+      "difficulty": "Базовый",
+      "position": 3,
+      "status": "not_started",
+      "test_count": 3
+    }
+  ]
+}

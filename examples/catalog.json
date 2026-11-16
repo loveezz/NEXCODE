@@ -1,0 +1,21 @@
+{
+  "labs": [
+    {
+      "title": "Лабораторная работа № 1",
+      "description": "Замените описание содержанием вашей лабораторной работы.",
+      "position": 1,
+      "exercises": [
+        {
+          "title": "Сумма двух чисел",
+          "statement": "Прочитайте два целых числа, каждое на отдельной строке. Выведите их сумму.",
+          "template": "a = int(input())\nb = int(input())\n# Выведите результат\n",
+          "tests": "{\"stdin\":\"2\\n3\\n\",\"stdout\":\"5\\n\"}\n{\"stdin\":\"-5\\n5\\n\",\"stdout\":\"0\\n\",\"compare\":\"exact\",\"timeout_ms\":1000}",
+          "timeout_ms": 5000,
+          "memory_mb": 128,
+          "difficulty": "Базовый",
+          "position": 1
+        }
+      ]
+    }
+  ]
+}
