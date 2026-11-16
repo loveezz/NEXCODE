@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import type { Catalog } from "./types";
 export async function catalogOnServer(): Promise<Catalog | undefined> {
-  if (process.env.GITHUB_PAGES === "true") return undefined;
+  if (
+    process.env.NEXCODE_STATIC_EXPORT === "true" ||
+    process.env.GITHUB_PAGES === "true"
+  )
+    return undefined;
   const jar = await cookies();
   try {
     const response = await fetch(

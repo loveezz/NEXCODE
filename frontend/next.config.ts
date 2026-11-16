@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
-const pages = process.env.GITHUB_PAGES === "true";
+const pages =
+  process.env.NEXCODE_STATIC_EXPORT === "true" ||
+  process.env.GITHUB_PAGES === "true";
 const config: NextConfig = {
   output: pages ? "export" : "standalone",
   distDir: pages ? "out" : ".next",
